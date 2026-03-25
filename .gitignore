@@ -1,0 +1,15 @@
+*.code-workspace
+*.dump*
+*.json
+*.mo
+*.pot
+*.pyc
+*.sqlite
+*.xml
+.DS_Store
+.idea
+.vscode
+__pycache__
+config.json
+instance
+venv
