@@ -1,12 +1,17 @@
-#[macro_use]  extern crate rocket;
+mod models;
+mod routes_auth;
 
-#[get("/")]
-fn index() -> &'static str {
-    "Hello, world!"
+use axum::{routing::get, Router};
+
+
+#[tokio::main]
+async fn main() {
+    let app = Router::new().merge(api_routes());
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:5000").await.unwrap();
+    axum::serve(listener, app).await.unwrap();
 }
 
-#[launch]
-fn rocket() -> _ {
-    rocket::build().mount("/", routes![index])
+fn api_routes() -> Router {
+    Router::new()
+        .merge(routes_auth::routes())
 }
-
