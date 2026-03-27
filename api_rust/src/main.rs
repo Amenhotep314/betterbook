@@ -2,7 +2,11 @@ mod models;
 mod routes_auth;
 
 use axum::{routing::get, Router};
+use migration::{Migrator, MigratorTrait};
 
+
+let connection = sea_orm::Database::connect(&database_url).await?;
+Migrator::up(&connection, None).await?;
 
 #[tokio::main]
 async fn main() {
