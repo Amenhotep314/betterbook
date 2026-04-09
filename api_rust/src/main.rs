@@ -3,7 +3,6 @@ mod routes_auth;
 
 use axum::{routing::get, Router};
 use std::env;
-use migration::{Migrator, MigratorTrait};
 
 
 #[tokio::main]
@@ -20,8 +19,9 @@ async fn main() {
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 
-    let connection = sea_orm::Database::connect(&database_url).await.unwrap();
-    Migrator::up(&connection, None).await.unwrap();
+    // Launch database
+    let db = sea_orm::Database::connect(&database_url).await.unwrap();
+    db.get_schema_registry("api_rust::entity::*").sync(db).await.unwrap();
 }
 
 fn api_routes() -> Router {

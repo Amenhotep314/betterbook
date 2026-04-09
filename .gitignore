@@ -14,3 +14,7 @@ build
 .env.*
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+
+# Environment
+.DS_Store
+
