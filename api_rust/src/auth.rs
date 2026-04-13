@@ -3,7 +3,7 @@
 
 use axum::{
     body::Body,
-    extract::{Json, Request},
+    extract::{Json, Request, State},
     http,
     http::StatusCode,
     middleware::Next,
@@ -17,7 +17,7 @@ use serde_json::json;
 use std::env;
 
 use crate::db_util;
-
+use crate::state::AppState;
 
 #[derive(Serialize, Deserialize)]
 pub struct Claims {
@@ -82,6 +82,7 @@ pub fn decode_jwt(jwt_token: String) -> Result<TokenData<Claims>, StatusCode> {
 }
 
 pub async fn authorization_middleware(
+    State(state): State<AppState>,
     mut req: Request,
     next: Next,
 ) -> Result<Response<Body>, AuthError> {
@@ -111,15 +112,16 @@ pub async fn authorization_middleware(
         }
     };
 
-    let current_user = match db_util::retrieve_user_by_email(&token_data.claims.email) {
-        Some(user) => user,
-        None => {
-            return Err(AuthError {
-                message: "You are not an authorized user".to_string(),
-                status_code: StatusCode::UNAUTHORIZED,
-            });
-        }
-    };
+    let current_user =
+        match db_util::retrieve_user_by_email(&state.db, &token_data.claims.email).await {
+            Some(user) => user,
+            None => {
+                return Err(AuthError {
+                    message: "You are not an authorized user".to_string(),
+                    status_code: StatusCode::UNAUTHORIZED,
+                });
+            }
+        };
     req.extensions_mut().insert(current_user);
     Ok(next.run(req).await)
 }

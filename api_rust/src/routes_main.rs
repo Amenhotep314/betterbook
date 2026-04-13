@@ -3,9 +3,10 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use crate::{auth, services};
+use crate::auth;
+use crate::state::AppState;
 
-pub fn routes() -> Router {
+pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/feed", get(services::hello).layer(middleware::from_fn(auth::authorize))),
 }
