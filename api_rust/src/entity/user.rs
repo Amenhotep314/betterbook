@@ -9,7 +9,8 @@ pub struct Model {
     pub first_name: String,
     pub last_name: String,
     pub email_addr: String,
-    pub password_hash: String
+    pub username: String,
+    pub password_hash: Vec<u8>,
 }
 
 impl ActiveModelBehavior for ActiveModel {}

@@ -1,11 +1,19 @@
-mod routes_auth;
+mod auth;
+mod db_util;
 mod entity;
+mod routes_auth;
 
-use axum::{routing::get, Router};
+use axum::{Router, routing::get};
+use sea_orm::{ConnectionTrait, Database, DbBackend, Schema, DatabaseConnection};
 use std::env;
-use sea_orm::{Database, Schema, DbBackend, ConnectionTrait};
 
 use crate::entity::user;
+
+
+#[derive(Clone)]
+pub struct AppState {
+    pub db: DatabaseConnection,
+}
 
 #[tokio::main]
 async fn main() -> Result<(), sea_orm::DbErr> {
@@ -16,8 +24,11 @@ async fn main() -> Result<(), sea_orm::DbErr> {
     let app_port = env::var("APP_PORT").expect("APP_PORT must be set in .env.");
 
     // Launch database
-    let db = Database::connect(&database_url).await?;
+    let db = Database::connect(&database_url).await.expect("Failed to connect to db.");
     db.get_schema_registry("crate::entity::*").sync(&db).await?;
+
+    //Create app state object
+    let state = AppState { db };
 
     // Launch app
     let addr = format!("{}:{}", &app_host, &app_port);
@@ -28,7 +39,7 @@ async fn main() -> Result<(), sea_orm::DbErr> {
     Ok(())
 }
 
+// Get mapping from URLs to functions
 fn api_routes() -> Router {
-    Router::new()
-        .merge(routes_auth::routes())
+    Router::new().merge(routes_auth::routes())
 }
