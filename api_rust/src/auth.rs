@@ -17,7 +17,11 @@ use serde_json::json;
 use std::env;
 
 use crate::db_util;
-use crate::state::AppState;
+use crate::state::{
+    AppState, 
+    AppError,
+    AppError::AuthError
+};
 
 #[derive(Serialize, Deserialize)]
 pub struct Claims {
@@ -26,26 +30,12 @@ pub struct Claims {
     pub email: String,
 }
 
-pub struct AuthError {
-    pub message: String,
-    pub status_code: StatusCode,
-}
 
-impl IntoResponse for AuthError {
-    fn into_response(self) -> Response {
-        let body = Json(json!({
-            "error": self.message,
-        }));
-
-        (self.status_code, body).into_response()
-    }
-}
-
-pub fn verify_password(password: &str, hash: &str) -> Result<bool, bcrypt::BcryptError> {
+pub fn verify_password(password: &str, hash: &str) -> Result<bool, AppError> {
     verify(password, hash)
 }
 
-pub fn hash_password(password: &str) -> Result<String, bcrypt::BcryptError> {
+pub fn hash_password(password: &str) -> Result<String, AppError> {
     let hash = hash(password, DEFAULT_COST)?;
     Ok(hash)
 }
@@ -85,7 +75,7 @@ pub async fn authorization_middleware(
     State(state): State<AppState>,
     mut req: Request,
     next: Next,
-) -> Result<Response<Body>, AuthError> {
+) -> Result<Response<Body>, AppError> {
     let auth_header = req.headers_mut().get(http::header::AUTHORIZATION);
     let auth_header = match auth_header {
         Some(header) => header.to_str().map_err(|_| AuthError {

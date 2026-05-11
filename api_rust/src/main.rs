@@ -11,6 +11,7 @@ use std::time::Duration;
 
 use crate::state::AppState;
 
+
 #[tokio::main]
 async fn main() -> Result<(), sea_orm::DbErr> {
     // Load environment variables

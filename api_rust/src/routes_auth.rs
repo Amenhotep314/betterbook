@@ -3,7 +3,7 @@ use axum::{
     extract::{Json, State},
     http::StatusCode,
     response::IntoResponse,
-    routing::get,
+    routing::{get, post},
 };
 use sea_orm::Set;
 use serde::Deserialize;
@@ -29,7 +29,7 @@ pub fn routes() -> Router<AppState> {
     Router::new()
         .route("/", get(index))
         .route("/login", get(login))
-        .route("/signup", get(signup))
+        .route("/signup", post(signup))
 }
 
 async fn index() -> &'static str {
@@ -46,14 +46,13 @@ async fn login(
             None => return Err(StatusCode::UNAUTHORIZED),
         };
 
-    if !auth::verify_password(&user_data.password, &curr_user.password_hash)
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    if !auth::verify_password(&user_data.password, &curr_user.password_hash)?
     {
         return Err(StatusCode::UNAUTHORIZED);
     }
 
     let token =
-        auth::encode_jwt(curr_user.email_addr).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        auth::encode_jwt(curr_user.email_addr)?;
 
     Ok(Json(token))
 }
@@ -62,9 +61,7 @@ async fn signup(
     State(state): State<AppState>,
     Json(user_data): Json<SignUpData>,
 ) -> impl IntoResponse {
-    if db_util::user_already_exists(&state.db, &user_data.username, &user_data.email)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+    if db_util::user_already_exists(&state.db, &user_data.username, &user_data.email).await?
     {
         return Err(StatusCode::CONFLICT);
     }
